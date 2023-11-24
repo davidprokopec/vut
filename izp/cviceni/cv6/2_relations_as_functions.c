@@ -43,7 +43,7 @@ set_t ctyri_prvky = {{1,2,3,4}, 4};
 funkci.
 - Rozšiřte funkci tak, aby našla minimální a maximální bod funkce:
 */
-bool rel_minmax(pair_t rel[5], pair_t* min, pair_t* max) {
+bool rel_minmax(pair_t rel[5], pair_t *min, pair_t *max) {
     if (!rel_is_func(rel)) {
         return false;
     }
@@ -66,7 +66,7 @@ bool rel_minmax(pair_t rel[5], pair_t* min, pair_t* max) {
 /*
 Implementujte funkci, která provede inverzi bodu (zamění hodnoty ve dvojici):
 */
-void pair_invert(pair_t* point) {
+void pair_invert(pair_t *point) {
     int tmp = point->x;
     point->x = point->y;
     point->y = tmp;
@@ -86,7 +86,6 @@ int main() {
 
     pair_invert(&min);
     printf("Swapped min: (%d, %d)\n", min.x, min.y);
-
 
     return 0;
 }

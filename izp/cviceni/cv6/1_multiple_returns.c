@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int my_div(int dividend, int divisor, double* quotient) {
+int my_div(int dividend, int divisor, double *quotient) {
     if (divisor == 0) {
         return 0;
     }
