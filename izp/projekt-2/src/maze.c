@@ -80,6 +80,7 @@ bool parse_arguments(int argc, char **argv) {
     } else {
         config.startRow = atoi(argv[2]);
         config.startCol = atoi(argv[3]);
+
         config.filePath = argv[4];
         return true;
     }
@@ -167,7 +168,7 @@ bool is_border(Map *map, int row, int column, enum BorderTypes border) {
 
 bool find_rpath(Map *map) {
     int startCellIndex = get_cell_index(map, config.startRow, config.startCol);
-    if (startCellIndex == -1) {
+    if (startCellIndex >= map->rows * map->cols || startCellIndex < 0) {
         printf("Invalid start cell\n");
         return false;
     }
