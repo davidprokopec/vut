@@ -10,6 +10,11 @@ typedef struct {
 } Map;
 
 typedef struct {
+    int x;
+    int y;
+} Change;
+
+typedef struct {
     bool help;
     bool test;
     bool rpath;
@@ -31,7 +36,75 @@ Config config = {
     .filePath = NULL,
 };
 
-enum BorderTypes { RIGHT, LEFT, TOP_BOTTOM };
+enum Directions { LEFT = 1, RIGHT, UP_DOWN = 4 };
+
+// Helper functions
+void print_help();
+bool parse_arguments(int argc, char **argv);
+// Map functions
+void map_dtor(Map *map);
+bool load_map(Map *map);
+bool test_map(Map *map);
+// Cell functions
+int get_cell_index(Map *map, int row, int column);
+// Border functions
+bool is_border(Map *map, int row, int column, int border);
+int start_border(Map *map, int row, int column);
+// Path functions
+bool solve(Map *map, int row, int column, int leftRight);
+
+int main(int argc, char *argv[]) {
+  // TODO - test upravit aby kontroloval ze sedi pocet radku a sloupcu podle prvniho radku
+  // TODO - upravit solve
+    if (!parse_arguments(argc, argv)) {
+        printf("Use --help for more information\n");
+        return 0;
+    }
+
+    if (config.help) {
+        print_help();
+        return 0;
+    }
+
+    Map map;
+    bool mapLoaded = load_map(&map);
+
+    if (!mapLoaded) {
+        printf("Error while loading the map\n");
+        return 0;
+    }
+
+    if (config.test) {
+        if (test_map(&map)) {
+            printf("Valid\n");
+        } else {
+            printf("Invalid\n");
+        }
+        map_dtor(&map);
+        return 0;
+    }
+
+    if (config.rpath) {
+        bool found = solve(&map, config.startRow, config.startCol, RIGHT);
+        if (found) {
+        } else {
+        }
+        map_dtor(&map);
+        return 0;
+    }
+
+    if (config.lpath) {
+        bool found = solve(&map, config.startRow, config.startCol, LEFT);
+        if (!found) {
+        } else {
+        }
+        map_dtor(&map);
+        return 0;
+    }
+
+    map_dtor(&map);
+    return 0;
+}
 
 void print_help() {
     printf("Help\n");
@@ -115,7 +188,7 @@ bool load_map(Map *map) {
             // get cells
             char *token = strtok(line, delimiters);
             while (token != NULL) {
-                map->cells[index] = token[0];
+                map->cells[index] = (unsigned char)atoi(token);
                 token = strtok(NULL, delimiters);
                 index++;
             }
@@ -134,13 +207,9 @@ void map_dtor(Map *map) {
     }
 }
 
-bool is_map_valid(Map *map) {
-    if (map->rows * map->cols != (int)strlen((char *)map->cells)) {
-        return false;
-    }
-
+bool test_map(Map *map) {
     for (int i = 0; i < map->rows * map->cols; i++) {
-        if (map->cells[i] < '0' || map->cells[i] > '7') {
+        if (map->cells[i] > 7) {
             return false;
         }
     }
@@ -154,68 +223,147 @@ int get_cell_index(Map *map, int row, int column) {
     return (row - 1) * map->cols + column - 1;
 }
 
-int start_border(Map *map, int row, int column, int leftRight); // TODO
-
-bool is_border(Map *map, int row, int column, enum BorderTypes border) {
-    int cellValue = map->cells[get_cell_index(map, row, column)];
-    switch (border) {
-        case RIGHT: return cellValue & 1;
-        case LEFT: return (cellValue >> 1) & 1;
-        case TOP_BOTTOM: return (cellValue >> 2) & 1;
-        default: return false;
-    }
+bool is_border(Map *map, int row, int column, int border) {
+    return (map->cells[map->cols * (row - 1) + column - 1] & border);
 }
 
-bool find_rpath(Map *map) {
-    int startCellIndex = get_cell_index(map, config.startRow, config.startCol);
-    if (startCellIndex >= map->rows * map->cols || startCellIndex < 0) {
-        printf("Invalid start cell\n");
+int start_border(Map *map, int row, int column) {
+    if (row == 1) {
+        if (column == 1) {
+            if (!is_border(map, row, column, LEFT)) {
+                return RIGHT;
+            }
+            if (!is_border(map, row, column, UP_DOWN)) {
+                return UP_DOWN;
+            }
+        } else if (column == map->cols) {
+            if (map->cols & 1 && !is_border(map, row, column, UP_DOWN)) {
+                return UP_DOWN;
+            }
+            if (!is_border(map, row, column, RIGHT)) {
+                return LEFT;
+            }
+        } else if (column & 1 && !is_border(map, row, column, UP_DOWN)) {
+            return UP_DOWN;
+        }
+    } else if (row == map->rows) {
+        if (map->rows & 1) {
+            if (column == 1 && !is_border(map, row, column, LEFT)) {
+                return RIGHT;
+            }
+            if (column == map->cols) {
+                if (!(map->cols & 1) && !is_border(map, row, column, RIGHT)) {
+                    return LEFT;
+                }
+                if (!is_border(map, row, column, UP_DOWN)) {
+                    return UP_DOWN;
+                }
+            } else if (column & 1) {
+                return -1; // ISP
+            } else if (!is_border(map, row, column, UP_DOWN)) {
+                return UP_DOWN;
+            }
+        } else {
+            if (column == 1 && !is_border(map, row, column, LEFT)) {
+                return RIGHT;
+            }
+            if (column == map->cols) {
+                if (map->cols & 1 && !is_border(map, row, column, RIGHT)) {
+                    return LEFT;
+                }
+                if (!is_border(map, row, column, UP_DOWN)) {
+                    return UP_DOWN;
+                }
+            } else if (!(column & 1) && !is_border(map, row, column, UP_DOWN)) {
+                return UP_DOWN;
+            }
+        }
+    } else if (row < map->rows) {
+        if (column == 1 && !is_border(map, row, column, LEFT)) {
+            return RIGHT;
+        }
+        if (column > 1 && column <= map->cols && !is_border(map, row, column, RIGHT)) {
+            return LEFT;
+        }
+    }
+    return -1;
+}
+
+// Function to solve the map
+bool solve(Map *map, int row, int column, int leftRight) {
+
+    // Changes in x and y for different directions
+    Change d[] = {
+        {-1, 0}, // UP
+        {0, -1}, // LEFT
+        {0, 1},  // RIGHT
+        {1, 0}   // DOWN
+    };
+
+    int horizontalDirection = -1; // Helper variable for direction
+    int currRow = row;
+    int currColumn = column;
+    int currDirection = start_border(map, currRow, currColumn);
+
+    if (currDirection == -1) {
         return false;
     }
-    printf("Start cell index: %d\n", startCellIndex);
 
-    return true;
-}
+    bool isInMaze = true;
+    while (isInMaze) {
+        bool triangleHasTopSide = 
+        printf("%d %d \n", currRow, currColumn);
+        if (!is_border(map, currRow, currColumn, RIGHT) && !is_border(map, currRow, currColumn, LEFT)
+            && !is_border(map, currRow, currColumn, UP_DOWN)) {
+            if ((leftRight == LEFT && ((currRow ^ currColumn) & 1))
+                || (leftRight == RIGHT && (!((currRow ^ currColumn) & 1)))) {
+                if (currDirection == LEFT) {
+                    currDirection = UP_DOWN; //druhy pripad
+                } else if (currDirection == UP_DOWN) {
+                    currDirection = LEFT;
+                }
+            } else {
+                if (currDirection == RIGHT) {
+                    currDirection = UP_DOWN;
+                } else if (currDirection == UP_DOWN) {
+                    currDirection = RIGHT;
+                }
+            }
+        } else if (!is_border(map, currRow, currColumn, RIGHT) && is_border(map, currRow, currColumn, LEFT)
+                   && !is_border(map, currRow, currColumn, UP_DOWN)) {
+            if (currDirection == LEFT) {
+                currDirection = UP_DOWN;
+            } else {
+                currDirection = RIGHT;
+            }
+        } else if (is_border(map, currRow, currColumn, RIGHT) && !is_border(map, currRow, currColumn, LEFT)
+                   && !is_border(map, currRow, currColumn, UP_DOWN)) {
+            if (currDirection == RIGHT) {
+                currDirection = UP_DOWN;
+            } else {
+                currDirection = LEFT;
+            }
+        } else if (!is_border(map, currRow, currColumn, RIGHT) && is_border(map, currRow, currColumn, LEFT)
+                   && is_border(map, currRow, currColumn, UP_DOWN)) {
+            currDirection = RIGHT;
+        } else if (is_border(map, currRow, currColumn, RIGHT) && !is_border(map, currRow, currColumn, LEFT)
+                   && is_border(map, currRow, currColumn, UP_DOWN)) {
+            currDirection = LEFT;
+        }
 
-int main(int argc, char *argv[]) {
-    if (!parse_arguments(argc, argv)) {
-        printf("Use --help for more information\n");
-        return 0;
-    }
-
-    if (config.help) {
-        print_help();
-        return 0;
-    }
-
-    Map map;
-    bool mapLoaded = load_map(&map);
-
-    if (!mapLoaded) {
-        printf("Error while loading the map\n");
-        return 0;
-    }
-
-    if (config.test) {
-        if (is_map_valid(&map)) {
-            printf("Valid\n");
+        if (currDirection == UP_DOWN) {
+            if ((currRow ^ currColumn) & 1) { /*hore*/
+                horizontalDirection = 3;
+            } else {
+                horizontalDirection = 0;
+            }
         } else {
-            printf("Invalid\n");
+            horizontalDirection = currDirection;
         }
-        map_dtor(&map);
-        return 0;
-    }
+        currRow = currRow + d[horizontalDirection].x;
+        currColumn = currColumn + d[horizontalDirection].y;
 
-    if (config.rpath) {
-        printf("Find right hand path\n");
-        bool found = find_rpath(&map);
-        if (!found) {
-            printf("No path found\n");
-        }
-        map_dtor(&map);
-        return 0;
+        isInMaze = currRow > 0 && currRow <= map->rows && currColumn > 0 && currColumn <= map->cols;
     }
-
-    map_dtor(&map);
-    return 0;
+    return true;
 }
