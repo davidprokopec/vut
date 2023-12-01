@@ -10,11 +10,6 @@ typedef struct {
 } Map;
 
 typedef struct {
-    int x;
-    int y;
-} Change;
-
-typedef struct {
     bool help;
     bool test;
     bool rpath;
@@ -36,6 +31,7 @@ Config config = {
     .filePath = NULL,
 };
 
+// LEFT = 001, RIGHT = 010, UP_DOWN = 100
 enum Directions { LEFT = 1, RIGHT, UP_DOWN = 4 };
 
 // Helper functions
@@ -54,8 +50,10 @@ int start_border(Map *map, int row, int column);
 bool solve(Map *map, int row, int column, int leftRight);
 
 int main(int argc, char *argv[]) {
-  // TODO - test upravit aby kontroloval ze sedi pocet radku a sloupcu podle prvniho radku
-  // TODO - upravit solve
+    // TODO - test upravit aby kontroloval ze sedi pocet radku a sloupcu podle prvniho radku
+    // TODO - upravit solve
+    // TODO - upravit is_border
+    // TODO - upravit directions enum
     if (!parse_arguments(argc, argv)) {
         printf("Use --help for more information\n");
         return 0;
@@ -224,6 +222,7 @@ int get_cell_index(Map *map, int row, int column) {
 }
 
 bool is_border(Map *map, int row, int column, int border) {
+    // porovnam vsechny bity a pokud se shoduji, tak je hrana
     return (map->cells[map->cols * (row - 1) + column - 1] & border);
 }
 
@@ -292,15 +291,14 @@ int start_border(Map *map, int row, int column) {
 // Function to solve the map
 bool solve(Map *map, int row, int column, int leftRight) {
 
-    // Changes in x and y for different directions
-    Change d[] = {
-        {-1, 0}, // UP
-        {0, -1}, // LEFT
-        {0, 1},  // RIGHT
-        {1, 0}   // DOWN
+    int changeDirection[4][2] = {
+        {-1, 0},  // UP 
+        {0, -1},  // LEFT
+        {0, 1}, // RIGHT
+        {1, 0}  // DOWN
     };
 
-    int horizontalDirection = -1; // Helper variable for direction
+    int nextMoveDirection = -1; 
     int currRow = row;
     int currColumn = column;
     int currDirection = start_border(map, currRow, currColumn);
@@ -311,13 +309,13 @@ bool solve(Map *map, int row, int column, int leftRight) {
 
     bool isInMaze = true;
     while (isInMaze) {
+        bool hasTopSide = (currRow + currColumn) % 2 == 0;
         printf("%d %d \n", currRow, currColumn);
         if (!is_border(map, currRow, currColumn, RIGHT) && !is_border(map, currRow, currColumn, LEFT)
             && !is_border(map, currRow, currColumn, UP_DOWN)) {
-            if ((leftRight == LEFT && ((currRow ^ currColumn) & 1))
-                || (leftRight == RIGHT && (!((currRow ^ currColumn) & 1)))) {
+            if ((leftRight == LEFT && !hasTopSide) || (leftRight == RIGHT && hasTopSide)) {
                 if (currDirection == LEFT) {
-                    currDirection = UP_DOWN; //druhy pripad
+                    currDirection = UP_DOWN;
                 } else if (currDirection == UP_DOWN) {
                     currDirection = LEFT;
                 }
@@ -352,15 +350,15 @@ bool solve(Map *map, int row, int column, int leftRight) {
 
         if (currDirection == UP_DOWN) {
             if ((currRow ^ currColumn) & 1) { /*hore*/
-                horizontalDirection = 3;
+                nextMoveDirection = 3;
             } else {
-                horizontalDirection = 0;
+                nextMoveDirection = 0;
             }
         } else {
-            horizontalDirection = currDirection;
+            nextMoveDirection = currDirection;
         }
-        currRow = currRow + d[horizontalDirection].x;
-        currColumn = currColumn + d[horizontalDirection].y;
+        currRow = currRow + changeDirection[nextMoveDirection][0];
+        currColumn = currColumn + changeDirection[nextMoveDirection][1];
 
         isInMaze = currRow > 0 && currRow <= map->rows && currColumn > 0 && currColumn <= map->cols;
     }
