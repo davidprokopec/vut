@@ -292,13 +292,13 @@ int start_border(Map *map, int row, int column) {
 bool solve(Map *map, int row, int column, int leftRight) {
 
     int changeDirection[4][2] = {
-        {-1, 0},  // UP 
-        {0, -1},  // LEFT
-        {0, 1}, // RIGHT
-        {1, 0}  // DOWN
+        {-1, 0}, // UP
+        {0, -1}, // LEFT
+        {0, 1},  // RIGHT
+        {1, 0}   // DOWN
     };
 
-    int nextMoveDirection = -1; 
+    int nextMoveDirection = -1;
     int currRow = row;
     int currColumn = column;
     int currDirection = start_border(map, currRow, currColumn);
@@ -309,10 +309,14 @@ bool solve(Map *map, int row, int column, int leftRight) {
 
     bool isInMaze = true;
     while (isInMaze) {
+        printf("%d,%d \n", currRow, currColumn);
+
         bool hasTopSide = (currRow + currColumn) % 2 == 0;
-        printf("%d %d \n", currRow, currColumn);
-        if (!is_border(map, currRow, currColumn, RIGHT) && !is_border(map, currRow, currColumn, LEFT)
-            && !is_border(map, currRow, currColumn, UP_DOWN)) {
+        bool leftBorder = is_border(map, currRow, currColumn, LEFT);
+        bool rightBorder = is_border(map, currRow, currColumn, RIGHT);
+        bool upDownBorder = is_border(map, currRow, currColumn, UP_DOWN);
+
+        if (!rightBorder && !leftBorder && !upDownBorder) {
             if ((leftRight == LEFT && !hasTopSide) || (leftRight == RIGHT && hasTopSide)) {
                 if (currDirection == LEFT) {
                     currDirection = UP_DOWN;
@@ -326,30 +330,26 @@ bool solve(Map *map, int row, int column, int leftRight) {
                     currDirection = RIGHT;
                 }
             }
-        } else if (!is_border(map, currRow, currColumn, RIGHT) && is_border(map, currRow, currColumn, LEFT)
-                   && !is_border(map, currRow, currColumn, UP_DOWN)) {
+        } else if (!rightBorder && leftBorder && !upDownBorder) {
             if (currDirection == LEFT) {
                 currDirection = UP_DOWN;
             } else {
                 currDirection = RIGHT;
             }
-        } else if (is_border(map, currRow, currColumn, RIGHT) && !is_border(map, currRow, currColumn, LEFT)
-                   && !is_border(map, currRow, currColumn, UP_DOWN)) {
+        } else if (rightBorder && !leftBorder && !upDownBorder) {
             if (currDirection == RIGHT) {
                 currDirection = UP_DOWN;
             } else {
                 currDirection = LEFT;
             }
-        } else if (!is_border(map, currRow, currColumn, RIGHT) && is_border(map, currRow, currColumn, LEFT)
-                   && is_border(map, currRow, currColumn, UP_DOWN)) {
+        } else if (!rightBorder && leftBorder && upDownBorder) {
             currDirection = RIGHT;
-        } else if (is_border(map, currRow, currColumn, RIGHT) && !is_border(map, currRow, currColumn, LEFT)
-                   && is_border(map, currRow, currColumn, UP_DOWN)) {
+        } else if (rightBorder && !leftBorder && upDownBorder) {
             currDirection = LEFT;
         }
 
         if (currDirection == UP_DOWN) {
-            if ((currRow ^ currColumn) & 1) { /*hore*/
+            if (!hasTopSide) { /*hore*/
                 nextMoveDirection = 3;
             } else {
                 nextMoveDirection = 0;
