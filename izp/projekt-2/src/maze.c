@@ -311,7 +311,6 @@ bool solve(Map *map, int row, int column, int leftRight) {
 
     bool isInMaze = true;
     while (isInMaze) {
-        bool triangleHasTopSide = 
         printf("%d %d \n", currRow, currColumn);
         if (!is_border(map, currRow, currColumn, RIGHT) && !is_border(map, currRow, currColumn, LEFT)
             && !is_border(map, currRow, currColumn, UP_DOWN)) {
