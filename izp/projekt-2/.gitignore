@@ -1,2 +1,4 @@
 inputs
 results
+cmake-build-debug
+.idea

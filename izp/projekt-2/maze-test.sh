@@ -81,7 +81,7 @@ mkdir ./results
 echo "----- Required functionality -----------------------------------"
 
 # test compilation
-echo "  Compilation: gcc -std=c11 -Wall -Wextra -Werror src/maze.c -o bin/maze"
+echo "  Compilation: gcc -std=c11 -Wall -Wextra -Werror maze.c -o maze"
 gcc -std=c11 -Wall -Wextra -Werror src/maze.c -o bin/maze > ./results/compilation_out.txt 2>&1
 ret=$?
 if [ $ret -ne 0 ]; then
@@ -112,4 +112,5 @@ test_example "--rpath 6 7 ./inputs/bludiste.txt"     6
 
 # test the bonus functionality
 echo "----- Bonus/Premium functionality ------------------------------"
-test_example "--shortest 3 7 ./inputs/bludiste.txt"  7
+test_example "--shortest 3 7 ../inputs/bludiste.txt"  7
+
